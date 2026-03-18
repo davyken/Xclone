@@ -39,6 +39,7 @@ module.exports = {
         'dark-line-reply': '#333639',
         'light-line-reply': '#CFD9DE',
         'twitter-icon': '#D6D9DB',
+        'x-icon': '#E7E9EA',
         'image-preview-hover': '#272C30',
       }
     }

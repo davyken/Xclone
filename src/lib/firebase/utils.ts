@@ -150,7 +150,7 @@ export async function uploadImages(
       );
       const data = await res.json();
 
-      return { id, src: data.secure_url, alt, type };
+      return { id, src: data.secure_url, alt, type: type || 'image' };
     })
   );
 

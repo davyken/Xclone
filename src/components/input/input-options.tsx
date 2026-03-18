@@ -29,7 +29,7 @@ const options: Readonly<Options> = [
   {
     name: 'Poll',
     iconName: 'ChartBarIcon',
-    disabled: true
+    disabled: false
   },
   {
     name: 'Emoji',

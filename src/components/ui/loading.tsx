@@ -13,8 +13,8 @@ export function Loading({
   return (
     <i className={cn('flex justify-center', className ?? 'p-4')}>
       <CustomIcon
-        className={cn('text-main-accent', iconClassName ?? 'h-7 w-7')}
-        iconName='SpinnerIcon'
+        className={cn('text-main-accent animate-spin', iconClassName ?? 'h-7 w-7')}
+        iconName='XIcon'
       />
     </i>
   );

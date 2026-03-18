@@ -35,14 +35,12 @@ const navLinks: Readonly<NavLink[]> = [
   {
     href: '/notifications',
     linkName: 'Notifications',
-    iconName: 'BellIcon',
-    disabled: true
+    iconName: 'BellIcon'
   },
   {
     href: '/messages',
     linkName: 'Messages',
-    iconName: 'EnvelopeIcon',
-    disabled: true
+    iconName: 'EnvelopeIcon'
   },
   {
     href: '/bookmarks',
@@ -54,7 +52,18 @@ const navLinks: Readonly<NavLink[]> = [
     href: '/lists',
     linkName: 'Lists',
     iconName: 'Bars3BottomLeftIcon',
-    disabled: true,
+    canBeHidden: true
+  },
+  {
+    href: '/communities',
+    linkName: 'Communities',
+    iconName: 'UsersIcon',
+    canBeHidden: true
+  },
+  {
+    href: '/spaces',
+    linkName: 'Spaces',
+    iconName: 'MicrophoneIcon',
     canBeHidden: true
   }
 ];
@@ -92,9 +101,9 @@ export function Sidebar(): JSX.Element {
               <a
                 className='custom-button main-tab text-accent-blue transition hover:bg-light-primary/10 
                            focus-visible:bg-accent-blue/10 focus-visible:!ring-accent-blue/80
-                           dark:text-twitter-icon dark:hover:bg-dark-primary/10'
+                           dark:text-x-icon dark:hover:bg-dark-primary/10'
               >
-                <CustomIcon className='h-7 w-7' iconName='TwitterIcon' />
+                <CustomIcon className='h-7 w-7' iconName='XIcon' />
               </a>
             </Link>
           </h1>

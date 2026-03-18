@@ -18,13 +18,12 @@ export type Tweet = {
 export type TweetWithUser = Tweet & { user: User };
 
 export const tweetConverter: FirestoreDataConverter<Tweet> = {
-  toFirestore(tweet) {
-    return { ...tweet };
+  toFirestore(data) {
+    return { ...data } as Record<string, unknown>;
   },
   fromFirestore(snapshot, options) {
     const { id } = snapshot;
     const data = snapshot.data(options);
-
     return { id, ...data } as Tweet;
   }
 };
