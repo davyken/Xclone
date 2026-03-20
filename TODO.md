@@ -1,5 +1,6 @@
-# Twitter Clone Fix TODO
+# Fixing Tweet Posting Error
 
-- [x] Edit package.json to fix dev script port (change -p 80 to default 3000)
-- [x] Test: npm run dev 
-- [ ] (Optional) Run Firebase emulators for backend: npm run emulators
+- [x] Plan approved by user
+- [x] Update src/components/input/input.tsx: Add try-catch error handling in sendTweet(), userId check, safe resets
+- [x] Test: Post tweet, verify no crash, check console/Firestore (handled)
+- [ ] If needed: Fix user doc init (totalTweets=0), update auth-context or utils
