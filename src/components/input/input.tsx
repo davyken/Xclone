@@ -72,57 +72,77 @@ export function Input({
     []
   );
 
-  const sendTweet = async (): Promise<void> => {
-    inputRef.current?.blur();
+    const sendTweet = async (): Promise<void> => {
+      inputRef.current?.blur();
 
-    setLoading(true);
+      setLoading(true);
 
-    const isReplying = reply ?? replyModal;
+      try {
+        const isReplying = reply ?? replyModal;
+        const userId = user?.id;
+        if (!userId) {
+          toast.error('Please sign in to post.');
+          setLoading(false);
+          return;
+        }
 
-    const userId = user?.id as string;
+        const images = await uploadImages(userId, selectedImages);
+        const tweetData: WithFieldValue<Omit<Tweet, 'id'>> = {
+          text: inputValue.trim() || '',
+          parent: isReplying && parent ? parent : null,
+          images: images ?? null,
+          userLikes: [],
+          createdBy: userId,
+          createdAt: serverTimestamp(),
+          updatedAt: null,
+          userReplies: 0,
+          userRetweets: []
+        };
 
-    const tweetData: WithFieldValue<Omit<Tweet, 'id'>> = {
-      text: inputValue.trim() || null,
-      parent: isReplying && parent ? parent : null,
-      images: await uploadImages(userId, selectedImages),
-      userLikes: [],
-      createdBy: userId,
-      createdAt: serverTimestamp(),
-      updatedAt: null,
-      userReplies: 0,
-      userRetweets: []
+        // Sanitize undefined values
+        Object.keys(tweetData).forEach(key => {
+          if (tweetData[key as keyof typeof tweetData] === undefined) {
+            delete tweetData[key as keyof typeof tweetData];
+          }
+        });
+
+        console.log('Tweet data before addDoc:', tweetData); // Debug
+
+        await sleep(500);
+
+        const tweetRef = await addDoc(tweetsCollection, tweetData);
+
+        await manageTotalTweets('increment', userId);
+        if (images?.length) await manageTotalPhotos('increment', userId);
+        if (isReplying && parent?.id) await manageReply('increment', parent.id as string);
+
+        const { id: tweetId } = await getDoc(tweetRef);
+
+        if (!modal && !replyModal) {
+          discardTweet();
+        }
+
+        if (closeModal) closeModal();
+
+        setLoading(false);
+
+        toast.success(
+          () => (
+            <span className='flex gap-2'>
+              Your Tweet was sent
+              <Link href={`/tweet/${tweetId}`}>
+                <a className='custom-underline font-bold'>View</a>
+              </Link>
+            </span>
+          ),
+          { duration: 6000 }
+        );
+      } catch (error) {
+        console.error('Tweet posting error:', error);
+        toast.error('Failed to post tweet. Please try again.');
+        setLoading(false);
+      }
     };
-
-    await sleep(500);
-
-    const [tweetRef] = await Promise.all([
-      addDoc(tweetsCollection, tweetData),
-      manageTotalTweets('increment', userId),
-      tweetData.images && manageTotalPhotos('increment', userId),
-      isReplying && manageReply('increment', parent?.id as string)
-    ]);
-
-    const { id: tweetId } = await getDoc(tweetRef);
-
-    if (!modal && !replyModal) {
-      discardTweet();
-      setLoading(false);
-    }
-
-    if (closeModal) closeModal();
-
-    toast.success(
-      () => (
-        <span className='flex gap-2'>
-          Your Tweet was sent
-          <Link href={`/tweet/${tweetId}`}>
-            <a className='custom-underline font-bold'>View</a>
-          </Link>
-        </span>
-      ),
-      { duration: 6000 }
-    );
-  };
 
   const handleImageUpload = (
     e: ChangeEvent<HTMLInputElement> | ClipboardEvent<HTMLTextAreaElement>

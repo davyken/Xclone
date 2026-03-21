@@ -118,10 +118,9 @@ export function ImagePreview({
           const isVideo = imagesPreview[index].type?.includes('video');
 
           return (
-            <motion.button
-              type='button'
+            <motion.div
               className={cn(
-                'accent-tab group relative transition-shadow',
+                'accent-tab group relative transition-shadow cursor-pointer',
                 isTweet
                   ? postImageBorderRadius[previewCount][index]
                   : 'rounded-2xl',
@@ -189,7 +188,7 @@ export function ImagePreview({
                   <ToolTip className='translate-y-2' tip='Remove' />
                 </Button>
               )}
-            </motion.button>
+            </motion.div>
           );
         })}
       </AnimatePresence>
