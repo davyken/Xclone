@@ -79,16 +79,18 @@ export function Input({
 
       try {
         const isReplying = reply ?? replyModal;
-        const userId = user?.id as string;
-
+        const userId = user?.id;
         if (!userId) {
-          throw new Error('User not authenticated');
+          toast.error('Please sign in to post.');
+          setLoading(false);
+          return;
         }
 
+        const images = await uploadImages(userId, selectedImages);
         const tweetData: WithFieldValue<Omit<Tweet, 'id'>> = {
-          text: inputValue.trim() || null,
+          text: inputValue.trim() || '',
           parent: isReplying && parent ? parent : null,
-          images: await uploadImages(userId, selectedImages),
+          images: images ?? null,
           userLikes: [],
           createdBy: userId,
           createdAt: serverTimestamp(),
@@ -97,14 +99,22 @@ export function Input({
           userRetweets: []
         };
 
+        // Sanitize undefined values
+        Object.keys(tweetData).forEach(key => {
+          if (tweetData[key as keyof typeof tweetData] === undefined) {
+            delete tweetData[key as keyof typeof tweetData];
+          }
+        });
+
+        console.log('Tweet data before addDoc:', tweetData); // Debug
+
         await sleep(500);
 
-        const [tweetRef] = await Promise.all([
-          addDoc(tweetsCollection, tweetData),
-          manageTotalTweets('increment', userId),
-          tweetData.images && manageTotalPhotos('increment', userId),
-          isReplying && manageReply('increment', parent?.id as string)
-        ]);
+        const tweetRef = await addDoc(tweetsCollection, tweetData);
+
+        await manageTotalTweets('increment', userId);
+        if (images?.length) await manageTotalPhotos('increment', userId);
+        if (isReplying && parent?.id) await manageReply('increment', parent.id as string);
 
         const { id: tweetId } = await getDoc(tweetRef);
 
@@ -131,7 +141,6 @@ export function Input({
         console.error('Tweet posting error:', error);
         toast.error('Failed to post tweet. Please try again.');
         setLoading(false);
-        discardTweet();
       }
     };
 
