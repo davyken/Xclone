@@ -1,0 +1,58 @@
+name: Daily Fun Fact
+
+on:
+  schedule:
+    - cron: "0 12 * * *"  # Tous les jours à midi (UTC)
+  workflow_dispatch:       # Lancement manuel possible
+
+jobs:
+  fun-fact:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch a random fun fact
+        id: fact
+        run: |
+          # Récupère un fun fact depuis une API gratuite (sans clé)
+          FACT=$(curl -s "https://uselessfacts.jsph.pl/random.json?language=en" | python3 -c "import sys,json; print(json.load(sys.stdin)['text'])")
+          echo "fact=$FACT" >> $GITHUB_OUTPUT
+
+      - name: Update FACTS.md
+        run: |
+          DATE=$(date +"%Y-%m-%d")
+          FACT="${{ steps.fact.outputs.fact }}"
+
+          # Crée le fichier s'il n'existe pas encore
+          if [ ! -f FACTS.md ]; then
+            echo "# 🧠 Daily Fun Facts" > FACTS.md
+            echo "" >> FACTS.md
+            echo "Un fait aléatoire ajouté chaque jour automatiquement." >> FACTS.md
+            echo "" >> FACTS.md
+            echo "---" >> FACTS.md
+            echo "" >> FACTS.md
+          fi
+
+          # Ajoute le fun fact du jour en haut du fichier
+          TEMP=$(mktemp)
+          head -6 FACTS.md > "$TEMP"
+          echo "### 📅 $DATE" >> "$TEMP"
+          echo "" >> "$TEMP"
+          echo "> $FACT" >> "$TEMP"
+          echo "" >> "$TEMP"
+          tail -n +7 FACTS.md >> "$TEMP"
+          mv "$TEMP" FACTS.md
+
+      - name: Commit and push
+        run: |
+          DATE=$(date +"%Y-%m-%d")
+          git add FACTS.md
+          git commit -m "feat: fun fact du $DATE"
+          git push
