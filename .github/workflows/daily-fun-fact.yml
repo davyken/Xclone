@@ -5,6 +5,9 @@ on:
     - cron: "0 0 * * *"  # Starts at midnight UTC, then random sleep
   workflow_dispatch:      # Manual trigger - no sleep
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   fun-fact:
     runs-on: ubuntu-latest
@@ -18,7 +21,7 @@ jobs:
           sleep $SLEEP_TIME
 
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Configure Git
         run: |
@@ -29,6 +32,9 @@ jobs:
         id: fact
         run: |
           FACT=$(curl -s "https://uselessfacts.jsph.pl/random.json?language=en" | python3 -c "import sys,json; print(json.load(sys.stdin)['text'])")
+          if [ -z "$FACT" ]; then
+            FACT="The longest place name in the world is in New Zealand and has 85 characters."
+          fi
           echo "fact=$FACT" >> $GITHUB_OUTPUT
 
       - name: Update FACTS.md
@@ -40,7 +46,7 @@ jobs:
           if [ ! -f FACTS.md ]; then
             echo "# 🧠 Daily Fun Facts" > FACTS.md
             echo "" >> FACTS.md
-            echo "Un fait aléatoire ajouté chaque jour automatiquement." >> FACTS.md
+            echo "A random fact added every day automatically." >> FACTS.md
             echo "" >> FACTS.md
             echo "---" >> FACTS.md
             echo "" >> FACTS.md
@@ -48,7 +54,7 @@ jobs:
 
           TEMP=$(mktemp)
           head -6 FACTS.md > "$TEMP"
-          echo "### 📅 $DATE à $TIME UTC" >> "$TEMP"
+          echo "### 📅 $DATE at $TIME UTC" >> "$TEMP"
           echo "" >> "$TEMP"
           echo "> $FACT" >> "$TEMP"
           echo "" >> "$TEMP"
@@ -60,5 +66,5 @@ jobs:
           DATE=$(date +"%Y-%m-%d")
           TIME=$(date +"%H:%M")
           git add FACTS.md
-          git commit -m "feat: fun fact du $DATE à $TIME"
+          git commit -m "feat: fun fact $DATE at $TIME" || echo "Nothing to commit"
           git push
