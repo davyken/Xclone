@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: Wait random time (scheduled runs only)
@@ -19,9 +20,10 @@ jobs:
           echo "Waiting $SLEEP_TIME seconds..."
           sleep $SLEEP_TIME
 
-      - name: Checkout repo
+      - name: Checkout dev branch
         uses: actions/checkout@v4
         with:
+          ref: dev
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure Git
@@ -59,16 +61,16 @@ jobs:
             "Tigers have striped skin, not just striped fur."
             "The average cloud weighs around 1.1 million pounds."
             "Sloths can hold their breath longer than dolphins can."
-            "It would take 1,200,000 mosquitoes all sucking at once to drain the average human of blood."
             "Turtles can breathe through their butts."
             "Scotland's national animal is the unicorn."
             "The longest hiccuping spree lasted 68 years."
+            "A group of cats is called a clowder."
           )
           FACT=${FACTS[$RANDOM % ${#FACTS[@]}]}
           echo "fact=$FACT" >> $GITHUB_OUTPUT
-          echo "Selected fact: $FACT"
+          echo "Selected: $FACT"
 
-      - name: Update FACTS.md
+      - name: Update FACTS.md on dev
         run: |
           DATE=$(date +"%Y-%m-%d")
           TIME=$(date +"%H:%M")
@@ -92,9 +94,9 @@ jobs:
           tail -n +7 FACTS.md >> "$TEMP"
           mv "$TEMP" FACTS.md
 
-          echo "FACTS.md updated successfully"
+          echo "FACTS.md updated!"
 
-      - name: Commit and push
+      - name: Commit and push to dev
         run: |
           DATE=$(date +"%Y-%m-%d")
           TIME=$(date +"%H:%M")
@@ -103,6 +105,36 @@ jobs:
             echo "Nothing to commit"
           else
             git commit -m "feat: fun fact $DATE at $TIME"
-            git push
-            echo "Pushed successfully!"
+            git push origin dev
+            echo "Pushed to dev!"
+          fi
+
+      - name: Create PR from dev to main
+        id: pr
+        run: |
+          DATE=$(date +"%Y-%m-%d")
+          FACT="${{ steps.fact.outputs.fact }}"
+
+          # Check if a PR from dev to main already exists
+          EXISTING_PR=$(gh pr list --base main --head dev --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
+
+          if [ -n "$EXISTING_PR" ]; then
+            echo "PR #$EXISTING_PR already exists, merging it..."
+            gh pr merge "$EXISTING_PR" --squash --delete-branch=false
+          else
+            echo "Creating new PR..."
+            PR_URL=$(gh pr create \
+              --title "🧠 Daily Fun Fact - $DATE" \
+              --body "## Fun Fact of the Day 🎉
+
+> $FACT
+
+---
+*This PR was created automatically by the Daily Fun Fact workflow.*" \
+              --base main \
+              --head dev)
+
+            echo "PR created: $PR_URL"
+            gh pr merge "$PR_URL" --squash --auto --delete-branch=false
+            echo "PR set to auto merge!"
           fi
