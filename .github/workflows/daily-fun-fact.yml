@@ -2,19 +2,19 @@ name: Daily Fun Fact
 
 on:
   schedule:
-    - cron: "0 0 * * *"  # Démarre à minuit UTC, puis sleep aléatoire
-  workflow_dispatch:
+    - cron: "0 0 * * *"  # Starts at midnight UTC, then random sleep
+  workflow_dispatch:      # Manual trigger - no sleep
 
 jobs:
   fun-fact:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Wait a random amount of time (simulate random hour)
+      - name: Wait a random amount of time (only on scheduled runs)
+        if: github.event_name == 'schedule'
         run: |
-          # Génère un délai aléatoire entre 0 et 23h (en secondes)
           SLEEP_TIME=$(( RANDOM % 82800 ))
-          echo "⏳ Attente de $SLEEP_TIME secondes avant le commit..."
+          echo "⏳ Waiting $SLEEP_TIME seconds before committing..."
           sleep $SLEEP_TIME
 
       - name: Checkout repo
