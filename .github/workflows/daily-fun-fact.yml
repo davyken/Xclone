@@ -2,40 +2,71 @@ name: Daily Fun Fact
 
 on:
   schedule:
-    - cron: "0 0 * * *"  # Starts at midnight UTC, then random sleep
-  workflow_dispatch:      # Manual trigger - no sleep
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    - cron: "0 0 * * *"
+  workflow_dispatch:
 
 jobs:
   fun-fact:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
-      - name: Wait a random amount of time (only on scheduled runs)
+      - name: Wait random time (scheduled runs only)
         if: github.event_name == 'schedule'
         run: |
           SLEEP_TIME=$(( RANDOM % 82800 ))
-          echo "⏳ Waiting $SLEEP_TIME seconds before committing..."
+          echo "Waiting $SLEEP_TIME seconds..."
           sleep $SLEEP_TIME
 
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Fetch a random fun fact
+      - name: Pick a random fun fact
         id: fact
         run: |
-          FACT=$(curl -s "https://uselessfacts.jsph.pl/random.json?language=en" | python3 -c "import sys,json; print(json.load(sys.stdin)['text'])")
-          if [ -z "$FACT" ]; then
-            FACT="The longest place name in the world is in New Zealand and has 85 characters."
-          fi
+          FACTS=(
+            "Honey never spoils. Archaeologists found 3000-year-old honey in Egyptian tombs still perfectly edible."
+            "A group of flamingos is called a flamboyance."
+            "Octopuses have three hearts and blue blood."
+            "Bananas are berries, but strawberries are not."
+            "The shortest war in history lasted only 38 minutes between Britain and Zanzibar in 1896."
+            "A day on Venus is longer than a year on Venus."
+            "The human nose can detect over 1 trillion different scents."
+            "Cleopatra lived closer in time to the Moon landing than to the construction of the Great Pyramid."
+            "There are more possible iterations of a game of chess than atoms in the observable universe."
+            "The Eiffel Tower can be 15cm taller during summer due to thermal expansion."
+            "A bolt of lightning is 5 times hotter than the surface of the sun."
+            "Crows can recognize and remember human faces."
+            "Sharks are older than trees. They have existed for over 400 million years."
+            "The average person walks the equivalent of 3 times around the Earth in their lifetime."
+            "Wombat poop is cube-shaped — the only animal known to produce cube-shaped droppings."
+            "A snail can sleep for 3 years at a time."
+            "The inventor of the frisbee was turned into a frisbee after he died."
+            "Elephants are the only animals that cannot jump."
+            "It rains diamonds on Neptune and Uranus."
+            "A group of owls is called a parliament."
+            "The fingerprints of a koala are so similar to humans that they have confused crime scene investigators."
+            "Almonds are a member of the peach family."
+            "The dot over the letter i is called a tittle."
+            "Tigers have striped skin, not just striped fur."
+            "The average cloud weighs around 1.1 million pounds."
+            "Sloths can hold their breath longer than dolphins can."
+            "It would take 1,200,000 mosquitoes all sucking at once to drain the average human of blood."
+            "Turtles can breathe through their butts."
+            "Scotland's national animal is the unicorn."
+            "The longest hiccuping spree lasted 68 years."
+          )
+          FACT=${FACTS[$RANDOM % ${#FACTS[@]}]}
           echo "fact=$FACT" >> $GITHUB_OUTPUT
+          echo "Selected fact: $FACT"
 
       - name: Update FACTS.md
         run: |
@@ -61,10 +92,17 @@ jobs:
           tail -n +7 FACTS.md >> "$TEMP"
           mv "$TEMP" FACTS.md
 
+          echo "FACTS.md updated successfully"
+
       - name: Commit and push
         run: |
           DATE=$(date +"%Y-%m-%d")
           TIME=$(date +"%H:%M")
           git add FACTS.md
-          git commit -m "feat: fun fact $DATE at $TIME" || echo "Nothing to commit"
-          git push
+          if git diff --staged --quiet; then
+            echo "Nothing to commit"
+          else
+            git commit -m "feat: fun fact $DATE at $TIME"
+            git push
+            echo "Pushed successfully!"
+          fi
